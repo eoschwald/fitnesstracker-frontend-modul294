@@ -1,24 +1,24 @@
 import { Component, Input } from '@angular/core';
-import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-page-header',
   standalone: true,
-  imports: [NgIf],
   template: `
-    <section class="hero" [style.marginBottom]="compact ? '16px' : '24px'">
-      <div class="row-between">
-        <div>
-          <h1 class="page-title">{{ title }}</h1>
-          <p class="page-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
-        </div>
+    <div class="page-header">
+      <div>
+        <h1 style="margin: 0;">{{ title }}</h1>
+        @if (subtitle) {
+          <p class="muted" style="margin: 6px 0 0;">{{ subtitle }}</p>
+        }
+      </div>
+
+      <div class="row">
         <ng-content select="[actions]"></ng-content>
       </div>
-    </section>
+    </div>
   `
 })
 export class PageHeaderComponent {
-  @Input({ required: true }) title!: string;
+  @Input() title = '';
   @Input() subtitle: string | null = null;
-  @Input() compact = false;
 }
