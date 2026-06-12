@@ -12,16 +12,27 @@ import { HasRoleDirective } from '../directives/has-role.directive';
         <div class="row" style="gap: 24px;">
           <a class="brand" routerLink="/dashboard">Fitness Tracker</a>
 
-          <nav class="nav">
-            <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-            <a routerLink="/workouts" routerLinkActive="active">Workouts</a>
-            <a routerLink="/users" routerLinkActive="active" *appHasRole="['READ']">Benutzer</a>
-          </nav>
+          @if (loggedIn) {
+            <nav class="nav">
+              <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+              <a routerLink="/workouts" routerLinkActive="active">Workouts</a>
+              <a
+                routerLink="/users"
+                routerLinkActive="active"
+                *appHasRole="['READ']"
+              >
+                Benutzer
+              </a>
+            </nav>
+          }
         </div>
 
-        <div class="row" style="gap: 8px;">
-          @if (loggedIn) {
-            <span class="badge accent">{{ userName || 'angemeldet' }}</span>
+        @if (loggedIn) {
+          <div class="row" style="gap: 8px;">
+            <span class="badge accent">
+              {{ userName || 'angemeldet' }}
+            </span>
+
             <button
               class="btn secondary"
               style="font-size:13px; padding: 6px 12px;"
@@ -30,17 +41,8 @@ import { HasRoleDirective } from '../directives/has-role.directive';
             >
               Abmelden
             </button>
-          } @else {
-            <button
-              class="btn primary"
-              style="font-size:13px; padding: 6px 12px;"
-              type="button"
-              (click)="login.emit()"
-            >
-              Anmelden
-            </button>
-          }
-        </div>
+          </div>
+        }
       </div>
     </header>
 
@@ -53,6 +55,7 @@ export class ShellComponent {
   @Input() userName: string | null = null;
   @Input() roles: string[] = [];
   @Input() loggedIn = false;
+
   @Output() login = new EventEmitter<void>();
   @Output() logout = new EventEmitter<void>();
 }
