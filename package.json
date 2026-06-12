@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lint": "ng lint"
   },
   "dependencies": {
     "@angular/animations": "^21.2.0",
@@ -25,15 +26,19 @@
     "zone.js": "^0.15.1"
   },
   "devDependencies": {
-    "@angular/build": "^21.2.15",
+    "@analogjs/vite-plugin-angular": "^2.6.1",
     "@angular-devkit/build-angular": "^21.2.0",
+    "@angular/build": "^21.2.15",
     "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^21.2.0",
-    "@analogjs/vite-plugin-angular": "^2.6.1",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.0.0",
+    "angular-eslint": "21.4.0",
+    "eslint": "^10.3.0",
     "jsdom": "^27.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
+    "typescript-eslint": "8.59.2",
     "vite": "^7.0.0",
     "vitest": "^4.1.8"
   }
