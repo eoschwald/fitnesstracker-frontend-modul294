@@ -5,13 +5,9 @@ export const environment: AppEnvironment = {
 
   auth: {
     issuer: 'http://localhost:8080/realms/fitness-tracker',
-
     clientId: 'fitness-tracker-client',
-
     redirectUri: 'http://localhost:4200',
-
     postLogoutRedirectUri: 'http://localhost:4200',
-
     scope: 'openid profile email'
   }
 };
