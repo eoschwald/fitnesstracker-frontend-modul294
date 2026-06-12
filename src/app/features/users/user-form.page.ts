@@ -15,18 +15,20 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
       subtitle="Einfacher Name für die Zuordnung von Workouts."
     ></app-page-header>
 
-    <div class="card card-pad stack" *ngIf="loadError" style="margin-bottom: 16px;">
-      <div class="error">{{ loadError }}</div>
-    </div>
+    @if (loadError) {
+      <div class="card card-pad stack" style="margin-bottom: 16px;">
+        <div class="error">{{ loadError }}</div>
+      </div>
+    }
 
     <div class="card card-pad stack">
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">
         <div class="field">
           <label for="username">Username</label>
           <input id="username" class="input" formControlName="username" />
-          <div class="error" *ngIf="username.invalid && username.touched">
-            Username ist erforderlich (max. 100 Zeichen).
-          </div>
+          @if (username.invalid && username.touched) {
+            <div class="error">Username ist erforderlich (max. 100 Zeichen).</div>
+          }
         </div>
 
         <div class="row" style="justify-content: space-between;">
