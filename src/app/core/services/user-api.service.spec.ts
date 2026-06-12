@@ -1,17 +1,32 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { UserApiService } from './user-api.service';
-import { environment } from '../../../environments/environment';
+
+vi.mock('../../../environments/environment', () => ({
+  environment: {
+    apiBaseUrl: 'http://localhost:8081/api',
+    auth: {
+      issuer: 'http://localhost:8080/realms/fitness-tracker',
+      clientId: 'fitness-tracker-client',
+      redirectUri: 'http://localhost:4200',
+      postLogoutRedirectUri: 'http://localhost:4200',
+      scope: 'openid profile email'
+    }
+  }
+}));
 
 describe('UserApiService', () => {
   let service: UserApiService;
   let httpMock: HttpTestingController;
 
+  const baseUrl = 'http://localhost:8081/api/users';
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()]
     });
+
     service = TestBed.inject(UserApiService);
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -23,7 +38,7 @@ describe('UserApiService', () => {
       expect(users).toHaveLength(1);
     });
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/users`);
+    const req = httpMock.expectOne(baseUrl);
     expect(req.request.method).toBe('GET');
     req.flush([{ id: 1, username: 'benutzer1' }]);
   });
@@ -33,7 +48,7 @@ describe('UserApiService', () => {
       expect(user.username).toBe('benutzer4');
     });
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/users/4`);
+    const req = httpMock.expectOne(`${baseUrl}/4`);
     expect(req.request.method).toBe('GET');
     req.flush({ id: 4, username: 'benutzer4' });
   });
@@ -42,7 +57,8 @@ describe('UserApiService', () => {
     service.create({ username: 'new-user' }).subscribe((user) => {
       expect(user.username).toBe('new-user');
     });
-    let req = httpMock.expectOne(`${environment.apiBaseUrl}/users`);
+
+    let req = httpMock.expectOne(baseUrl);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ username: 'new-user' });
     req.flush({ id: 10, username: 'new-user' });
@@ -50,13 +66,15 @@ describe('UserApiService', () => {
     service.update(10, { username: 'updated-user' }).subscribe((user) => {
       expect(user.username).toBe('updated-user');
     });
-    req = httpMock.expectOne(`${environment.apiBaseUrl}/users/10`);
+
+    req = httpMock.expectOne(`${baseUrl}/10`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ username: 'updated-user' });
     req.flush({ id: 10, username: 'updated-user' });
 
     service.delete(10).subscribe();
-    req = httpMock.expectOne(`${environment.apiBaseUrl}/users/10`);
+
+    req = httpMock.expectOne(`${baseUrl}/10`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });

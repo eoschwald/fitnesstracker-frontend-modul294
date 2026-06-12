@@ -1,17 +1,32 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { WorkoutApiService } from './workout-api.service';
-import { environment } from '../../../environments/environment';
+
+vi.mock('../../../environments/environment', () => ({
+  environment: {
+    apiBaseUrl: 'http://localhost:8081/api',
+    auth: {
+      issuer: 'http://localhost:8080/realms/fitness-tracker',
+      clientId: 'fitness-tracker-client',
+      redirectUri: 'http://localhost:4200',
+      postLogoutRedirectUri: 'http://localhost:4200',
+      scope: 'openid profile email'
+    }
+  }
+}));
 
 describe('WorkoutApiService', () => {
   let service: WorkoutApiService;
   let httpMock: HttpTestingController;
 
+  const baseUrl = 'http://localhost:8081/api/workouts';
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()]
     });
+
     service = TestBed.inject(WorkoutApiService);
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -23,7 +38,7 @@ describe('WorkoutApiService', () => {
       expect(workouts).toHaveLength(1);
     });
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts`);
+    const req = httpMock.expectOne(baseUrl);
     expect(req.request.method).toBe('GET');
     req.flush([
       {
@@ -42,7 +57,7 @@ describe('WorkoutApiService', () => {
       expect(workout.id).toBe(7);
     });
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts/7`);
+    const req = httpMock.expectOne(`${baseUrl}/7`);
     expect(req.request.method).toBe('GET');
     req.flush({
       id: 7,
@@ -55,16 +70,18 @@ describe('WorkoutApiService', () => {
   });
 
   it('creates, updates and deletes workouts', () => {
-    service.create({
-      title: 'Leg Day',
-      description: 'Heavy session',
-      workoutDate: '2026-06-11',
-      userId: 1
-    }).subscribe((workout) => {
-      expect(workout.id).toBe(2);
-    });
+    service
+      .create({
+        title: 'Leg Day',
+        description: 'Heavy session',
+        workoutDate: '2026-06-11',
+        userId: 1
+      })
+      .subscribe((workout) => {
+        expect(workout.id).toBe(2);
+      });
 
-    let req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts`);
+    let req = httpMock.expectOne(baseUrl);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
       title: 'Leg Day',
@@ -81,16 +98,18 @@ describe('WorkoutApiService', () => {
       exercises: []
     });
 
-    service.update(2, {
-      title: 'Leg Day',
-      description: 'Updated',
-      workoutDate: '2026-06-11',
-      userId: 1
-    }).subscribe((workout) => {
-      expect(workout.title).toBe('Leg Day');
-    });
+    service
+      .update(2, {
+        title: 'Leg Day',
+        description: 'Updated',
+        workoutDate: '2026-06-11',
+        userId: 1
+      })
+      .subscribe((workout) => {
+        expect(workout.title).toBe('Leg Day');
+      });
 
-    req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts/2`);
+    req = httpMock.expectOne(`${baseUrl}/2`);
     expect(req.request.method).toBe('PUT');
     req.flush({
       id: 2,
@@ -102,7 +121,8 @@ describe('WorkoutApiService', () => {
     });
 
     service.delete(2).subscribe();
-    req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts/2`);
+
+    req = httpMock.expectOne(`${baseUrl}/2`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
@@ -111,24 +131,29 @@ describe('WorkoutApiService', () => {
     service.getExercises(3).subscribe((exercises) => {
       expect(exercises).toHaveLength(1);
     });
-    let req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts/3/exercises`);
+
+    let req = httpMock.expectOne(`${baseUrl}/3/exercises`);
     expect(req.request.method).toBe('GET');
     req.flush([{ id: 1, name: 'Bench', repetitions: 10, durationInMinutes: 20, weight: 40 }]);
 
-    service.addExercise(3, {
-      name: 'Bench',
-      repetitions: 10,
-      durationInMinutes: 20,
-      weight: 40
-    }).subscribe((exercise) => {
-      expect(exercise.name).toBe('Bench');
-    });
-    req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts/3/exercises`);
+    service
+      .addExercise(3, {
+        name: 'Bench',
+        repetitions: 10,
+        durationInMinutes: 20,
+        weight: 40
+      })
+      .subscribe((exercise) => {
+        expect(exercise.name).toBe('Bench');
+      });
+
+    req = httpMock.expectOne(`${baseUrl}/3/exercises`);
     expect(req.request.method).toBe('POST');
     req.flush({ id: 2, name: 'Bench', repetitions: 10, durationInMinutes: 20, weight: 40 });
 
     service.removeExercise(3, 2).subscribe();
-    req = httpMock.expectOne(`${environment.apiBaseUrl}/workouts/3/exercises/2`);
+
+    req = httpMock.expectOne(`${baseUrl}/3/exercises/2`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
