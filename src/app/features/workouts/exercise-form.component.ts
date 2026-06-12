@@ -13,27 +13,27 @@ import { Exercise, ExerciseRequest } from '../../core/models/workout.model';
 
       <form class="grid grid-2" [formGroup]="form" (ngSubmit)="submit()">
         <div class="field">
-          <label>Name</label>
-          <input class="input" formControlName="name" />
+          <label for="exerciseName">Name</label>
+          <input id="exerciseName" class="input" formControlName="name" />
         </div>
 
         <div class="field">
-          <label>Wiederholungen</label>
-          <input class="input" type="number" formControlName="repetitions" />
+          <label for="exerciseRepetitions">Wiederholungen</label>
+          <input id="exerciseRepetitions" class="input" type="number" formControlName="repetitions" />
         </div>
 
         <div class="field">
-          <label>Dauer (Minuten)</label>
-          <input class="input" type="number" formControlName="durationInMinutes" />
+          <label for="exerciseDuration">Dauer (Minuten)</label>
+          <input id="exerciseDuration" class="input" type="number" formControlName="durationInMinutes" />
         </div>
 
         <div class="field">
-          <label>Gewicht</label>
-          <input class="input" type="number" step="0.5" formControlName="weight" />
+          <label for="exerciseWeight">Gewicht</label>
+          <input id="exerciseWeight" class="input" type="number" step="0.5" formControlName="weight" />
         </div>
 
         <div class="row" style="grid-column: 1 / -1; justify-content: space-between;">
-          <button class="btn secondary" type="button" (click)="reset.emit()">Zurücksetzen</button>
+          <button class="btn secondary" type="button" (click)="resetRequested.emit()">Zurücksetzen</button>
           <button class="btn primary" type="submit">Speichern</button>
         </div>
       </form>
@@ -43,7 +43,7 @@ import { Exercise, ExerciseRequest } from '../../core/models/workout.model';
 export class ExerciseFormComponent implements OnChanges {
   @Input() exercise: Exercise | null = null;
   @Output() saveExercise = new EventEmitter<ExerciseRequest>();
-  @Output() reset = new EventEmitter<void>();
+  @Output() resetRequested = new EventEmitter<void>();
 
   private readonly fb = inject(FormBuilder);
 

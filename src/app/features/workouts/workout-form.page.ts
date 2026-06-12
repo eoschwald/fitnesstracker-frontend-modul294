@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { WorkoutApiService } from '../../core/services/workout-api.service';
 import { UserApiService } from '../../core/services/user-api.service';
 import { User } from '../../core/models/user.model';
@@ -17,26 +17,28 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
       subtitle="Pflichtfelder werden clientseitig validiert."
     ></app-page-header>
 
-    <div class="card card-pad stack" *ngIf="loadError" style="margin-bottom: 16px;">
-      <div class="error">{{ loadError }}</div>
-    </div>
+    @if (loadError) {
+      <div class="card card-pad stack" style="margin-bottom: 16px;">
+        <div class="error">{{ loadError }}</div>
+      </div>
+    }
 
     <div class="card card-pad stack">
       <form class="grid grid-2" [formGroup]="form" (ngSubmit)="save()">
         <div class="field">
           <label for="title">Titel</label>
           <input id="title" class="input" formControlName="title" />
-          <div class="error" *ngIf="title.invalid && title.touched">
-            Titel ist erforderlich (max. 150 Zeichen).
-          </div>
+          @if (title.invalid && title.touched) {
+            <div class="error">Titel ist erforderlich (max. 150 Zeichen).</div>
+          }
         </div>
 
         <div class="field">
           <label for="workoutDate">Datum</label>
           <input id="workoutDate" class="input" type="date" formControlName="workoutDate" />
-          <div class="error" *ngIf="workoutDate.invalid && workoutDate.touched">
-            Bitte ein gültiges Datum wählen.
-          </div>
+          @if (workoutDate.invalid && workoutDate.touched) {
+            <div class="error">Bitte ein gültiges Datum wählen.</div>
+          }
         </div>
 
         <div class="field grid-2" style="grid-column: 1 / -1;">
@@ -44,14 +46,13 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
             <label for="userId">Benutzer</label>
             <select id="userId" class="select" formControlName="userId">
               <option value="">Bitte wählen</option>
-              <option *ngFor="let user of users; trackBy: trackByUser" [value]="user.id">
-                {{ user.username }}
-              </option>
+              @for (user of users; track user.id) {
+                <option [value]="user.id">{{ user.username }}</option>
+              }
             </select>
-            <div class="muted" *ngIf="usersLoading">Benutzer werden geladen...</div>
-            <div class="error" *ngIf="userId.invalid && userId.touched">
-              Benutzer ist erforderlich.
-            </div>
+            @if (userId.invalid && userId.touched) {
+              <div class="error">Benutzer ist erforderlich.</div>
+            }
           </div>
 
           <div class="field">
@@ -63,13 +64,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 
         <div class="row" style="grid-column: 1 / -1; justify-content: space-between;">
           <a class="btn secondary" routerLink="/workouts">Abbrechen</a>
-          <button
-            class="btn primary"
-            type="submit"
-            [disabled]="form.invalid || saving || usersLoading"
-          >
-            Speichern
-          </button>
+          <button class="btn primary" type="submit" [disabled]="form.invalid || saving">Speichern</button>
         </div>
       </form>
     </div>
@@ -90,7 +85,6 @@ export class WorkoutFormPageComponent implements OnInit {
   });
 
   users: User[] = [];
-  usersLoading = true;
   saving = false;
   isEditMode = false;
   loadError: string | null = null;
@@ -117,57 +111,43 @@ export class WorkoutFormPageComponent implements OnInit {
     this.isEditMode = Number.isFinite(id) && id > 0;
     this.workoutId = this.isEditMode ? id : null;
 
-    this.loadUsers();
+    const users$ = this.userApi.getAll().pipe(
+      catchError((error) => {
+        console.error('Benutzer konnten nicht geladen werden.', error);
+        this.loadError = 'Benutzer konnten nicht geladen werden.';
+        return of([] as User[]);
+      })
+    );
 
-    if (this.isEditMode && this.workoutId != null) {
-      this.loadWorkout(this.workoutId);
-    } else {
-      this.usersLoading = false;
-    }
-  }
+    const workout$ =
+      this.isEditMode && this.workoutId != null
+        ? this.workoutApi.getById(this.workoutId).pipe(
+            catchError((error) => {
+              console.error('Workout konnte nicht geladen werden.', error);
+              this.loadError = 'Workout konnte nicht geladen werden.';
+              return of(null);
+            })
+          )
+        : of(null);
 
-  private loadUsers(): void {
-    this.userApi
-      .getAll()
-      .pipe(
-        catchError((error) => {
-          console.error('Benutzer konnten nicht geladen werden.', error);
-          this.loadError = 'Benutzer konnten nicht geladen werden.';
-          return of([] as User[]);
-        })
-      )
-      .subscribe((users) => {
+    forkJoin({ users: users$, workout: workout$ }).subscribe({
+      next: ({ users, workout }) => {
         this.users = users;
-        this.usersLoading = false;
 
-        if (!this.isEditMode && users.length === 1) {
-          this.form.patchValue({ userId: String(users[0].id) });
+        if (this.isEditMode && workout) {
+          this.form.patchValue({
+            title: workout.title,
+            description: workout.description ?? '',
+            workoutDate: workout.workoutDate,
+            userId: String(workout.userId)
+          });
         }
-      });
-  }
-
-  private loadWorkout(id: number): void {
-    this.workoutApi
-      .getById(id)
-      .pipe(
-        catchError((error) => {
-          console.error('Workout konnte nicht geladen werden.', error);
-          this.loadError = 'Workout konnte nicht geladen werden.';
-          return of(null);
-        })
-      )
-      .subscribe((workout) => {
-        if (!workout) {
-          return;
-        }
-
-        this.form.patchValue({
-          title: workout.title,
-          description: workout.description ?? '',
-          workoutDate: workout.workoutDate,
-          userId: String(workout.userId)
-        });
-      });
+      },
+      error: (error) => {
+        console.error('Formular konnte nicht geladen werden.', error);
+        this.loadError = 'Formular konnte nicht geladen werden.';
+      }
+    });
   }
 
   save(): void {
@@ -199,9 +179,5 @@ export class WorkoutFormPageComponent implements OnInit {
         this.saving = false;
       }
     });
-  }
-
-  trackByUser(_: number, user: User): number {
-    return user.id;
   }
 }
